@@ -85,10 +85,13 @@ function BCDM:ResolveMedia()
     local LSM = BCDM.LSM
     local GeneralDB = BCDM.db.profile.General
     local PowerBarDB = BCDM.db.profile.PowerBar
+    local CastBarDB = BCDM.db.profile.CastBar
     BCDM.Media = BCDM.Media or {}
     BCDM.Media.Font = LSM:Fetch("font", GeneralDB.Font) or STANDARD_TEXT_FONT
-    BCDM.Media.FGTexture = LSM:Fetch("statusbar", PowerBarDB.FGTexture) or "Interface\\Buttons\\WHITE8X8"
-    BCDM.Media.BGTexture = LSM:Fetch("statusbar", PowerBarDB.BGTexture) or "Interface\\RaidFrame\\Raid-Bar-Hp-Fill"
+    BCDM.Media.PowerBarFGTexture = LSM:Fetch("statusbar", PowerBarDB.FGTexture) or "Interface\\Buttons\\WHITE8X8"
+    BCDM.Media.PowerBarBGTexture = LSM:Fetch("statusbar", PowerBarDB.BGTexture) or "Interface\\RaidFrame\\Raid-Bar-Hp-Fill"
+    BCDM.Media.CastBarFGTexture = LSM:Fetch("statusbar", CastBarDB.FGTexture) or "Interface\\Buttons\\WHITE8X8"
+    BCDM.Media.CastBarBGTexture = LSM:Fetch("statusbar", CastBarDB.BGTexture) or "Interface\\RaidFrame\\Raid-Bar-Hp-Fill"
 end
 
 function BCDM:UpdateBCDM()

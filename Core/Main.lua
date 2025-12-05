@@ -16,4 +16,5 @@ function AddOn:OnEnable()
     BCDM:ResolveMedia()
     BCDM:SetupCooldownManager()
     BCDM:SetupPowerBar()
+    BCDM:SetupCastBar()
 end

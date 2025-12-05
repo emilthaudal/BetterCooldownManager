@@ -46,8 +46,9 @@ local BarParents = {
     {
         ["EssentialCooldownViewer"] = "Essential",
         ["UtilityCooldownViewer"] = "Utility",
+        ["BCDM_PowerBar"] = "Power Bar",
     },
-    { "EssentialCooldownViewer", "UtilityCooldownViewer"}
+    { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar"}
 }
 
 local PowerBarAnchorToName = {
@@ -789,7 +790,7 @@ local function DrawCastBarSettings(parentContainer)
     local Duration_ExpirationSlider = AG:Create("Slider")
     Duration_ExpirationSlider:SetLabel("Expiration Threshold (seconds)")
     Duration_ExpirationSlider:SetValue(CastBarDB.Duration.ExpirationThreshold)
-    Duration_ExpirationSlider:SetSliderValues(0, 5, 1)
+    Duration_ExpirationSlider:SetSliderValues(0, 10, 1)
     Duration_ExpirationSlider:SetRelativeWidth(0.25)
     Duration_ExpirationSlider:SetCallback("OnValueChanged", function(_, _, value) CastBarDB.Duration.ExpirationThreshold = value BCDM:UpdateCastBar() end)
     DurationContainer:AddChild(Duration_ExpirationSlider)

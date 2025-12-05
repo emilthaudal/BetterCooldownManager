@@ -211,10 +211,10 @@ end
 function BCDM:SetupCooldownManager()
     PositionCooldownViewers()
     for cooldownViewer, _ in pairs(IconPerCooldownViewer) do ApplyCooldownText(cooldownViewer) end
-    hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
-    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
+    hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() BCDM:SetCastBarWidth() AdjustCooldownManagerStrata() end)
+    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() BCDM:SetCastBarWidth() AdjustCooldownManagerStrata() end)
     for _, cooldownViewer in ipairs(CooldownManagerViewers) do
-        hooksecurefunc(_G[cooldownViewer], "RefreshLayout", function() if InCombatLockdown() then return end SkinCooldownManager() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
+        hooksecurefunc(_G[cooldownViewer], "RefreshLayout", function() if InCombatLockdown() then return end SkinCooldownManager() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() BCDM:SetCastBarWidth() AdjustCooldownManagerStrata() end)
     end
 end
 
