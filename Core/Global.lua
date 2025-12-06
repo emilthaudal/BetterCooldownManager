@@ -9,7 +9,7 @@ BCDM.AddOnName = C_AddOns.GetAddOnMetadata("BetterCooldownManager", "Title")
 
 BCDM.Icon = "Interface\\AddOns\\BetterCooldownManager\\Media\\Logo.png"
 
-if BCDM.LSM then BCDM.LSM:Register("statusbar", "BetterBlizzard", [[Interface\AddOns\BetterCooldownManager\Media\BetterBlizzard.blp]]) end
+if BCDM.LSM then BCDM.LSM:Register("statusbar", "Better Blizzard", [[Interface\AddOns\BetterCooldownManager\Media\BetterBlizzard.blp]]) end
 
 BCDM.CooldownViewerToDB = {
     ["EssentialCooldownViewer"] = "Essential",

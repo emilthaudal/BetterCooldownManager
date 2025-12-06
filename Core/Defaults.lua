@@ -44,7 +44,7 @@ BCDM.Defaults = {
         },
         CastBar = {
             Height = 24,
-            FGTexture = "BetterBlizzard",
+            FGTexture = "Better Blizzard",
             BGTexture = "Solid",
             FGColour = {255/255, 204/255, 64/255, 1},
             BGColour = {20/255, 20/255, 20/255, 1},
@@ -92,7 +92,7 @@ BCDM.Defaults = {
         },
         PowerBar = {
             Height = 13,
-            FGTexture = "BetterBlizzard",
+            FGTexture = "Better Blizzard",
             BGTexture = "Solid",
             FGColour = {0/255, 122/255, 204/255, 1},
             BGColour = {20/255, 20/255, 20/255, 1},
@@ -107,7 +107,7 @@ BCDM.Defaults = {
         },
         SecondaryBar = {
             Height = 13,
-            FGTexture = "BetterBlizzard",
+            FGTexture = "Better Blizzard",
             BGTexture = "Solid",
             FGColour = {0/255, 122/255, 204/255, 1},
             BGColour = {20/255, 20/255, 20/255, 1},
