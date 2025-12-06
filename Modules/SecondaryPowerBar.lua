@@ -26,6 +26,8 @@ local function DetectSecondaryPower()
         return Enum.PowerType.Runes
     elseif class == "DEMONHUNTER" then
         if specID == 1480 then return "SOUL" end
+    elseif class == "SHAMAN" then
+        if specID == 263 then return Enum.PowerType.Maelstrom end
     end
     return nil
 end
@@ -252,6 +254,24 @@ local function CreateSecondaryPowerBar()
             SecondaryPowerBar.StatusBar:SetValue(currentRaw)
             SecondaryPowerBar.StatusBar:SetStatusBarColor(FetchPowerBarColour("player"))
             CreateTicks(5)
+            return
+        end
+
+        if secondaryPowerResource == Enum.PowerType.Maelstrom then
+            local current = UnitPower("player", secondaryPowerResource) or 0
+            local max = UnitPowerMax("player", secondaryPowerResource) or 0
+
+            if max <= 0 then
+                ClearTicks()
+                SecondaryPowerBar.StatusBar:SetValue(0)
+                return
+            end
+
+            SecondaryPowerBar.StatusBar:SetMinMaxValues(0, max)
+            SecondaryPowerBar.StatusBar:SetValue(current)
+            SecondaryPowerBar.StatusBar:SetStatusBarColor(FetchPowerBarColour("player"))
+            SecondaryPowerBar:Show()
+            CreateTicks(10)
             return
         end
 
