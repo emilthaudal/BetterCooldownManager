@@ -1,5 +1,5 @@
 <h2 align="center">
-  <img src="https://raw.githubusercontent.com/DaleHuntGB/BetterCooldownManager/refs/heads/main/Media/Logo.png?token=GHSAT0AAAAAADQIMMCUI6BYJBTGVOYANV2A2JVNEOA"
+  <img src="https://raw.githubusercontent.com/DaleHuntGB/BetterCooldownManager/refs/heads/main/Media/Logo.png?token=GHSAT0AAAAAADQIMMCVKXWU4DIHUYH3WNEA2JVNKQQ"
        width="48"
        height="48"
        style="position: relative; top: 12px;" />
