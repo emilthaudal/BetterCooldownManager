@@ -4,6 +4,12 @@
   BetterCooldownManager
 </h2>
 
+<a href="https://discord.gg/UZCgWRYvVE"><img src="https://img.shields.io/badge/Join-Discord-blue" alt="Discord"></a>
+<a href="https://www.twitch.tv/subs/UnhaltedGB"><img src="https://img.shields.io/badge/Support-Twitch-purple" alt="Twitch"></a>
+<a href="https://patreon.com/Unhalted"><img src="https://img.shields.io/badge/Support-Patreon-orange" alt="Patreon"></a>
+<a href="https://streamelements.com/unhaltedgb/tip"><img src="https://img.shields.io/badge/Support-Donate-yellow" alt="StreamElements"></a>
+<a href="https://ko-fi.com/unhalted"><img src="https://img.shields.io/badge/Buy_Me-A_Coffee-red" alt="Ko-Fi"></a>
+
 ### Overview
 
 BetterCooldownManager extends Blizzard’s Edit Mode instead of replacing it. The goal is simple: keep everything fully compatible with the base UI while adding the tools Blizzard hasn't developed yet.
