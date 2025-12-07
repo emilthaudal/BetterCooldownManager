@@ -280,6 +280,9 @@ local function DrawGeneralSettings(parentContainer)
     CooldownTextContainer:SetLayout("Flow")
     ScrollFrame:AddChild(CooldownTextContainer)
 
+    local CooldownTextContainerInfoTag = CreateInfoTag("These settings only apply to |cFF8080FFEssential|r, |cFF8080FFUtility|r & |cFF8080FFBuffs|r Cooldown Viewers.")
+    CooldownTextContainer:AddChild(CooldownTextContainerInfoTag)
+
     local CooldownText_AnchorFrom = AG:Create("Dropdown")
     CooldownText_AnchorFrom:SetLabel("Anchor From")
     CooldownText_AnchorFrom:SetList(Anchors[1], Anchors[2])
@@ -738,6 +741,9 @@ local function DrawDefensiveSettings(parentContainer)
     SupportedDefensivesContainer:SetFullWidth(true)
     SupportedDefensivesContainer:SetLayout("Flow")
     ScrollFrame:AddChild(SupportedDefensivesContainer)
+
+    local SupportedDefensiveContainerInfoTag = CreateInfoTag("The following is a list of all defensive abilities currently supported by the |cFF8080FFDefensive Cooldown Viewer|r.\nIf you feel an ability is missing, please visit the |cFF8080FFGitHub|r page to request its addition.")
+    SupportedDefensivesContainer:AddChild(SupportedDefensiveContainerInfoTag)
 
     for class, _ in pairs(BCDM.DefensiveSpells) do
         local classContainer = AG:Create("InlineGroup")
