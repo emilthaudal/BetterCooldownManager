@@ -69,92 +69,55 @@ local function CreateCastBar()
     CastBar:RegisterUnitEvent("UNIT_SPELLCAST_STOP", "player")
     CastBar:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
     CastBar:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player")
-    CastBar:RegisterUnitEvent("UNIT_SPELLCAST_DELAYED", "player")
 
     CastBar:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
     CastBar:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
-    CastBar:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", "player")
 
-    CastBar:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_START", "player")
-    CastBar:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_UPDATE", "player")
-    CastBar:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_STOP", "player")
+
+    local CAST_START = {
+        UNIT_SPELLCAST_START = true,
+        UNIT_SPELLCAST_INTERRUPTIBLE = true,
+        UNIT_SPELLCAST_NOT_INTERRUPTIBLE = true,
+        UNIT_SPELLCAST_SENT = true,
+    }
+
+    local CAST_STOP = {
+        UNIT_SPELLCAST_STOP = true,
+        UNIT_SPELLCAST_CHANNEL_STOP = true,
+        PLAYER_TARGET_CHANGED = true,
+        UNIT_SPELLCAST_FAILED = true,
+        UNIT_SPELLCAST_INTERRUPTED = true,
+    }
+
+    local CHANNEL_START = {
+        UNIT_SPELLCAST_CHANNEL_START = true,
+    }
 
     CastBar:SetScript("OnEvent", function(self, event, unit)
         if unit ~= "player" then return end
-
-        if event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_DELAYED" then
-            local name, _, _, startTime, endTime = UnitCastingInfo("player")
-            if not name then return end
-            self.isChannel = false
-            self.startTime = startTime
-            self.endTime = endTime
-            self:SetMinMaxValues(0, endTime - startTime)
-            self:SetValue((GetTime() * 1000) - startTime)
-            self.SpellName:SetText(name)
-            self:Show()
-            BCDM.CastBarContainer:Show()
-            self:SetScript("OnUpdate", function(self)
-                local now = GetTime() * 1000
-                local elapsed = now - self.startTime
-                local remaining = (self.endTime - now) / 1000
-                if not UnitCastingInfo("player") then
-                    self:Hide()
-                    BCDM.CastBarContainer:Hide()
-                    self:SetScript("OnUpdate", nil)
-                    return
-                end
-                if elapsed < 0 then elapsed = 0 end
-                self:SetValue(elapsed)
-                local seconds = remaining
-                if seconds < BCDM.db.profile.CastBar.Duration.ExpirationThreshold then
-                    self.Duration:SetText(string.format("%.1f", seconds))
-                else
-                    self.Duration:SetText(string.format("%d", seconds))
-                end
-            end)
-            return
-        end
-
-        if event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_CHANNEL_UPDATE" then
-            local name, _, _, startTime, endTime = UnitChannelInfo("player")
-            if not name then return end
-            self.isChannel = true
-            self.startTime = startTime
-            self.endTime = endTime
-            self:SetMinMaxValues(0, endTime - startTime)
-            self:SetValue(endTime - (GetTime() * 1000))
-            self.SpellName:SetText(name)
-            self:Show()
-            BCDM.CastBarContainer:Show()
-            self:SetScript("OnUpdate", function(self)
-                local now = GetTime() * 1000
-                local remaining = self.endTime - now
-                local chanName = UnitChannelInfo("player")
-                if not chanName then
-                    self:Hide()
-                    BCDM.CastBarContainer:Hide()
-                    self:SetScript("OnUpdate", nil)
-                    return
-                end
-                if remaining < 0 then remaining = 0 end
-                self:SetValue(remaining)
-                local seconds = remaining / 1000
-                if seconds < BCDM.db.profile.CastBar.Duration.ExpirationThreshold then
-                    self.Duration:SetText(string.format("%.1f", seconds))
-                else
-                    self.Duration:SetText(string.format("%d", seconds))
-                end
-            end)
-            return
-        end
-
-        if event == "UNIT_SPELLCAST_STOP" or event == "UNIT_SPELLCAST_CHANNEL_STOP" or event == "UNIT_SPELLCAST_INTERRUPTED" or event == "UNIT_SPELLCAST_FAILED" then
-            if not UnitCastingInfo("player") and not UnitChannelInfo("player") then
-                self:Hide()
-                BCDM.CastBarContainer:Hide()
-                self:SetScript("OnUpdate", nil)
-            end
-            return
+        if CAST_START[event] then
+            local castDuration = UnitCastingDuration("player")
+            if not castDuration then return end
+            CastBar:SetTimerDuration(castDuration, 0)
+            CastBar.Icon:SetTexture(select(3, UnitCastingInfo("player")) or nil)
+            CastBar.SpellName:SetText(UnitCastingInfo("player") or "")
+            CastBar:SetScript("OnUpdate", function() local remainingDuration = castDuration:GetRemainingDuration() CastBar.Duration:SetText(string.format("%.1f", remainingDuration)) end)
+            CastBarContainer:Show()
+            CastBar:Show()
+        elseif CHANNEL_START[event] then
+            local channelDuration = UnitChannelDuration("player")
+            if not channelDuration then return end
+            CastBar:SetTimerDuration(channelDuration, 0)
+            CastBar:SetMinMaxValues(0, channelDuration:GetTotalDuration())
+            CastBar.SpellName:SetText(UnitChannelInfo("player") or "")
+            CastBar.Icon:SetTexture(select(3, UnitChannelInfo("player")) or nil)
+            CastBar:SetScript("OnUpdate", function() local remainingDuration = channelDuration:GetRemainingDuration() CastBar:SetValue(remainingDuration) CastBar.Duration:SetText(string.format("%.1f", remainingDuration)) end)
+            CastBarContainer:Show()
+            CastBar:Show()
+        elseif CAST_STOP[event] then
+            CastBarContainer:Hide()
+            CastBar:Hide()
+            CastBar:SetScript("OnUpdate", nil)
         end
     end)
 
