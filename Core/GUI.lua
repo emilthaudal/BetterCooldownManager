@@ -820,9 +820,6 @@ local function DrawCustomBarSettings(parentContainer)
     local playerClass = select(2, UnitClass("player"))
     local specName = select(2, GetSpecializationInfo(GetSpecialization()))
 
-    local infoTag = CreateInfoTag( "Below are all the abilities for " .. ClassToPrettyClass[playerClass] .. ". Check the ones you want to track in the |cFF8080FFCustom Cooldown Viewer|r." )
-    SupportedCustomContainer:AddChild(infoTag)
-
     local function BuildCustomSpellList()
         local profile = BCDM.db.profile.Custom.CustomSpells[playerClass][specName:upper()] or {}
         BCDMGUI.classContainer:ReleaseChildren()
