@@ -251,7 +251,7 @@ function BCDM:UpdateCooldownViewer(cooldownViewer)
     AdjustChargeCount(cooldownViewer)
     ApplyCooldownText(cooldownViewer)
     AdjustCooldownManagerStrata()
-    if _G[cooldownViewer] and _G[cooldownViewer].Layout then _G[cooldownViewer]:Layout() end
+    if _G[cooldownViewer] and _G[cooldownViewer].Layout  and not InCombatLockdown() then _G[cooldownViewer]:Layout() end
     PositionCooldownViewers()
     BCDM:SetPowerBarWidth()
     BCDM:SetSecondaryPowerBarWidth()
