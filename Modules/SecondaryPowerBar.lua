@@ -2,6 +2,10 @@ local _, BCDM = ...
 local RuneBars = {}
 local soulTicker = nil
 
+-- 1217607 - Void Metamorphosis Buff
+-- 1225789 - Void Metamorphosis Resource
+-- 344179  - Maelstrom Weapon Buff
+
 local function DetectSecondaryPower()
     local class = select(2, UnitClass("player"))
     local spec  = GetSpecialization()
@@ -30,6 +34,15 @@ local function DetectSecondaryPower()
         if specID == 263 then return Enum.PowerType.Maelstrom end
     end
     return nil
+end
+
+local function FetchAuraStacks(spellId)
+    for i = 1, 40 do
+        local auraData = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
+        if auraData then
+            if auraData.spellId == spellId then return auraData.charges or 0 end
+        end
+    end
 end
 
 local function FetchPowerBarColour(unit)
@@ -208,22 +221,15 @@ local function CreateSecondaryPowerBar()
 
         if secondaryPowerResource == "SOUL" then
             ClearTicks()
-            local soulBar = _G["DemonHunterSoulFragmentsBar"]
             local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534) -- Soul Glutton
-            if soulBar then
-                if not soulBar:IsShown() then soulBar:Show() soulBar:SetAlpha(0) end
-                local current = soulBar:GetValue() or 0
-                local min, max = soulBar:GetMinMaxValues()
-                SecondaryPowerBar.StatusBar:SetMinMaxValues(min, max)
-                SecondaryPowerBar.StatusBar:SetValue(current)
-                SecondaryPowerBar.StatusBar:SetStatusBarColor(FetchPowerBarColour("player"))
-                if hasSoulGlutton then
-                    CreateTicks(7)
-                else
-                    CreateTicks(10)
-                end
+            local currentValue = FetchAuraStacks(1217607) or 0
+            SecondaryPowerBar.StatusBar:SetMinMaxValues(0, hasSoulGlutton and 35 or 50)
+            SecondaryPowerBar.StatusBar:SetValue(currentValue)
+            SecondaryPowerBar.StatusBar:SetStatusBarColor(FetchPowerBarColour("player"))
+            if hasSoulGlutton then
+                CreateTicks(7)
             else
-                SecondaryPowerBar.StatusBar:SetValue(0)
+                CreateTicks(10)
             end
             SecondaryPowerBar:Show()
             return
@@ -236,6 +242,7 @@ local function CreateSecondaryPowerBar()
             SecondaryPowerBar.StatusBar:SetMinMaxValues(0, maxHP)
             SecondaryPowerBar.StatusBar:SetValue(current)
             SecondaryPowerBar.StatusBar:SetStatusBarColor(FetchPowerBarColour("player"))
+            SecondaryPowerBar:Show()
             return
         end
 
