@@ -143,6 +143,7 @@ local function StyleBuffsBars()
     for _, childFrame in ipairs(buffBarChildren) do
         local buffBar = childFrame.Bar
         local buffIcon = childFrame.Icon
+        if childFrame.DebuffBorder then childFrame.DebuffBorder:SetAlpha(0) end
 
         if BuffBarDB.MatchWidthOfAnchor then
             local anchorFrame = _G[BuffBarDB.Layout[2]]
@@ -219,7 +220,6 @@ local function StyleBuffsBars()
                 end
             end
         end
-        BCDM:AddBorder(childFrame)
         BCDM:AddBorder(buffBar)
         BCDM:AddBorder(buffIcon)
     end
