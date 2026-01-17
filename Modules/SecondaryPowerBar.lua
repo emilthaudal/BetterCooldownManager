@@ -1,13 +1,15 @@
 local _, BCDM = ...
 
-local RUNE_BARS = {}
-local COMBO_POINTS = {}
+local runeBars = {}
+local comboPoints = {}
+local essenceTicks = {}
 local resizeTimer = nil
 
 local function DetectSecondaryPower()
     local class = select(2, UnitClass("player"))
-    local spec  = GetSpecialization()
+    local spec = GetSpecialization()
     local specID = GetSpecializationInfo(spec)
+
     if class == "MONK" then
         if specID == 268 then return "STAGGER" end
         if specID == 269 then return Enum.PowerType.Chi end
@@ -31,69 +33,83 @@ local function DetectSecondaryPower()
     elseif class == "SHAMAN" then
         if specID == 263 then return Enum.PowerType.Maelstrom end
     end
+
     return nil
 end
 
 local function NudgeSecondaryPowerBar(secondaryPowerBar, xOffset, yOffset)
     local powerBarFrame = _G[secondaryPowerBar]
     if not powerBarFrame then return end
+
     local point, relativeTo, relativePoint, xOfs, yOfs = powerBarFrame:GetPoint(1)
     powerBarFrame:ClearAllPoints()
     powerBarFrame:SetPoint(point, relativeTo, relativePoint, xOfs + xOffset, yOfs + yOffset)
 end
 
-local function FetchPowerBarColour()
-    local CooldownManagerDB = BCDM.db.profile
-    local GeneralDB = CooldownManagerDB.General
-    local SecondaryPowerBarDB = CooldownManagerDB.SecondaryPowerBar
-    if SecondaryPowerBarDB then
-        if SecondaryPowerBarDB.ColourByType then
-            local powerType = DetectSecondaryPower()
-            local powerColour = GeneralDB.Colours.SecondaryPower[powerType]
-            if powerColour then return powerColour[1], powerColour[2], powerColour[3], powerColour[4] or 1 end
-        elseif SecondaryPowerBarDB.ColourByClass then
-            local _, class = UnitClass("player")
-            local classColour = RAID_CLASS_COLORS[class]
-            if classColour then return classColour.r, classColour.g, classColour.b, 1 end
-        elseif BCDM.IS_DEATHKNIGHT and SecondaryPowerBarDB.ColourBySpec then
-            local spec  = GetSpecialization()
-            local specID = GetSpecializationInfo(spec)
-            local runeColours = GeneralDB.Colours.SecondaryPower["RUNES"]
-            if specID == 250 and runeColours and runeColours.BLOOD then
-                local colour = runeColours.BLOOD
-                return colour[1], colour[2], colour[3], colour[4] or 1
-            elseif specID == 251 and runeColours and runeColours.FROST then
-                local colour = runeColours.FROST
-                return colour[1], colour[2], colour[3], colour[4] or 1
-            elseif specID == 252 and runeColours and runeColours.UNHOLY then
-                local colour = runeColours.UNHOLY
-                return colour[1], colour[2], colour[3], colour[4] or 1
-            end
-        else
-            return SecondaryPowerBarDB.ForegroundColour[1], SecondaryPowerBarDB.ForegroundColour[2], SecondaryPowerBarDB.ForegroundColour[3], SecondaryPowerBarDB.ForegroundColour[4] or 1
-        end
+local function GetPowerBarColor()
+    local cooldownManagerDB = BCDM.db.profile
+    local generalDB = cooldownManagerDB.General
+    local secondaryPowerBarDB = cooldownManagerDB.SecondaryPowerBar
+
+    if not secondaryPowerBarDB then
+        return 1, 1, 1, 1
     end
+
+    if secondaryPowerBarDB.ColourByType then
+        local powerType = DetectSecondaryPower()
+        local powerColour = generalDB.Colours.SecondaryPower[powerType]
+        if powerColour then
+            return powerColour[1], powerColour[2], powerColour[3], powerColour[4] or 1
+        end
+    elseif secondaryPowerBarDB.ColourByClass then
+        local _, class = UnitClass("player")
+        local classColour = RAID_CLASS_COLORS[class]
+        if classColour then
+            return classColour.r, classColour.g, classColour.b, 1
+        end
+    elseif BCDM.IS_DEATHKNIGHT and secondaryPowerBarDB.ColourBySpec then
+        local spec = GetSpecialization()
+        local specID = GetSpecializationInfo(spec)
+        local runeColours = generalDB.Colours.SecondaryPower["RUNES"]
+
+        if specID == 250 and runeColours and runeColours.BLOOD then
+            local colour = runeColours.BLOOD
+            return colour[1], colour[2], colour[3], colour[4] or 1
+        elseif specID == 251 and runeColours and runeColours.FROST then
+            local colour = runeColours.FROST
+            return colour[1], colour[2], colour[3], colour[4] or 1
+        elseif specID == 252 and runeColours and runeColours.UNHOLY then
+            local colour = runeColours.UNHOLY
+            return colour[1], colour[2], colour[3], colour[4] or 1
+        end
+    else
+        return secondaryPowerBarDB.ForegroundColour[1], secondaryPowerBarDB.ForegroundColour[2], 
+               secondaryPowerBarDB.ForegroundColour[3], secondaryPowerBarDB.ForegroundColour[4] or 1
+    end
+
     return 1, 1, 1, 1
 end
 
 local function CreateRuneBars()
     local parent = BCDM.SecondaryPowerBar
     if not parent then return end
-    for i = 1, #RUNE_BARS do
-        if RUNE_BARS[i] then
-            RUNE_BARS[i]:SetScript("OnUpdate", nil)
-            RUNE_BARS[i]:Hide()
-            RUNE_BARS[i]:SetParent(nil)
-            RUNE_BARS[i] = nil
+
+    for i = 1, #runeBars do
+        if runeBars[i] then
+            runeBars[i]:SetScript("OnUpdate", nil)
+            runeBars[i]:Hide()
+            runeBars[i]:SetParent(nil)
+            runeBars[i] = nil
         end
     end
-    wipe(RUNE_BARS)
+    wipe(runeBars)
+
     for i = 1, 6 do
         local runeBar = CreateFrame("StatusBar", nil, parent)
         runeBar:SetStatusBarTexture(BCDM.Media.Foreground)
         runeBar:SetMinMaxValues(0, 1)
         runeBar:SetValue(0)
-        RUNE_BARS[i] = runeBar
+        runeBars[i] = runeBar
     end
 end
 
@@ -101,26 +117,49 @@ local function CreateComboPoints(maxPower)
     local parent = BCDM.SecondaryPowerBar
     if not parent then return end
 
-    for i = 1, #COMBO_POINTS do
-        COMBO_POINTS[i]:Hide()
-        COMBO_POINTS[i]:SetParent(nil)
-        COMBO_POINTS[i] = nil
+    for i = 1, #comboPoints do
+        comboPoints[i]:Hide()
+        comboPoints[i]:SetParent(nil)
+        comboPoints[i] = nil
     end
-    wipe(COMBO_POINTS)
+    wipe(comboPoints)
 
     for i = 1, maxPower do
         local bar = CreateFrame("StatusBar", nil, parent)
         bar:SetStatusBarTexture(BCDM.Media.Foreground)
         bar:SetMinMaxValues(0, 1)
         bar:SetValue(0)
-        COMBO_POINTS[i] = bar
+        comboPoints[i] = bar
     end
 end
 
+local function CreateEssenceTicks(maxEssence)
+    local parent = BCDM.SecondaryPowerBar
+    if not parent then return end
+
+    for i = 1, #essenceTicks do
+        essenceTicks[i].bar:SetScript("OnUpdate", nil)
+        essenceTicks[i].bar:Hide()
+        essenceTicks[i].bar:SetParent(nil)
+        essenceTicks[i] = nil
+    end
+    wipe(essenceTicks)
+
+    for i = 1, maxEssence do
+        local bar = CreateFrame("StatusBar", nil, parent)
+        bar:SetStatusBarTexture(BCDM.Media.Foreground)
+        bar:SetMinMaxValues(0, 1)
+        bar:SetValue(0)
+
+        essenceTicks[i] = {
+            bar = bar,
+        }
+    end
+end
 
 local function LayoutRuneBars()
     local secondaryBar = BCDM.SecondaryPowerBar
-    if not secondaryBar or #RUNE_BARS == 0 then return end
+    if not secondaryBar or #runeBars == 0 then return end
 
     local powerBarWidth = secondaryBar:GetWidth() - 2
     local powerBarHeight = secondaryBar:GetHeight() - 2
@@ -128,7 +167,7 @@ local function LayoutRuneBars()
     local runeWidth = (powerBarWidth - (runeSpacing * 5)) / 6
 
     for i = 1, 6 do
-        local runeBar = RUNE_BARS[i]
+        local runeBar = runeBars[i]
         if not runeBar then return end
 
         runeBar:ClearAllPoints()
@@ -137,57 +176,85 @@ local function LayoutRuneBars()
         if i == 1 then
             runeBar:SetPoint("LEFT", secondaryBar, "LEFT", 1, 0)
         else
-            runeBar:SetPoint("LEFT", RUNE_BARS[i-1], "RIGHT", runeSpacing, 0)
+            runeBar:SetPoint("LEFT", runeBars[i-1], "RIGHT", runeSpacing, 0)
         end
     end
 end
 
 local function LayoutComboPoints()
     local parent = BCDM.SecondaryPowerBar
-    if not parent or #COMBO_POINTS == 0 then return end
+    if not parent or #comboPoints == 0 then return end
 
     local inset = 1
     local width = parent:GetWidth() - inset * 2
     local height = parent:GetHeight() - inset * 2
-    local count = #COMBO_POINTS
+    local count = #comboPoints
     local barWidth = math.floor(width / count)
 
     for i = 1, count do
-        local bar = COMBO_POINTS[i]
+        local bar = comboPoints[i]
         bar:ClearAllPoints()
         bar:SetHeight(height)
 
         if i == count then
-            bar:SetPoint("TOPLEFT", COMBO_POINTS[i-1], "TOPRIGHT", 0, 0)
+            bar:SetPoint("TOPLEFT", comboPoints[i-1], "TOPRIGHT", 0, 0)
             bar:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -inset, inset)
         elseif i == 1 then
             bar:SetPoint("TOPLEFT", parent, "TOPLEFT", inset, -inset)
             bar:SetWidth(barWidth)
         else
-            bar:SetPoint("TOPLEFT", COMBO_POINTS[i-1], "TOPRIGHT", 0, 0)
+            bar:SetPoint("TOPLEFT", comboPoints[i-1], "TOPRIGHT", 0, 0)
             bar:SetWidth(barWidth)
         end
     end
 end
 
+local function LayoutEssenceTicks()
+    local parent = BCDM.SecondaryPowerBar
+    if not parent or #essenceTicks == 0 then return end
+
+    local powerBarWidth = parent:GetWidth() - 2
+    local powerBarHeight = parent:GetHeight() - 2
+    local spacing = 1
+    local count = #essenceTicks
+    local barWidth = (powerBarWidth - (spacing * (count - 1))) / count
+
+    for i = 1, count do
+        local tick = essenceTicks[i]
+        local bar = tick.bar
+
+        bar:ClearAllPoints()
+        bar:SetSize(barWidth, powerBarHeight)
+
+        if i == 1 then
+            bar:SetPoint("LEFT", parent, "LEFT", 1, 0)
+        else
+            bar:SetPoint("LEFT", essenceTicks[i - 1].bar, "RIGHT", spacing, 0)
+        end
+    end
+end
+
 local function StartRuneOnUpdate(runeBar, runeIndex)
-    local GeneralDB = BCDM.db.profile.General
+    local generalDB = BCDM.db.profile.General
+
     runeBar:SetScript("OnUpdate", function(self)
         local runeStartTime, runeDuration, runeReady = GetRuneCooldown(runeIndex)
+
         if runeReady then
             self:SetScript("OnUpdate", nil)
             self:SetValue(1)
-            local r, g, b, a = FetchPowerBarColour()
+            local r, g, b, a = GetPowerBarColor()
             self:SetStatusBarColor(r, g, b, a)
             return
         end
+
         if runeDuration and runeDuration > 0 then
             local now = GetTime()
             local elapsed = now - runeStartTime
             local progress = math.min(1, elapsed / runeDuration)
             self:SetValue(progress)
 
-            local rechargeColour = GeneralDB.Colours.SecondaryPower["RUNE_RECHARGE"]
+            local rechargeColour = generalDB.Colours.SecondaryPower["RUNE_RECHARGE"]
             if rechargeColour then
                 self:SetStatusBarColor(rechargeColour[1], rechargeColour[2], rechargeColour[3], rechargeColour[4] or 1)
             end
@@ -197,16 +264,17 @@ end
 
 local function UpdateRuneDisplay()
     local parent = BCDM.SecondaryPowerBar
-    if not parent or #RUNE_BARS == 0 then return end
+    if not parent or #runeBars == 0 then return end
 
     local maxPower = 6
-    local r, g, b, a = FetchPowerBarColour()
+    local r, g, b, a = GetPowerBarColor()
 
     local runeReadyList = {}
     local runeOnCDList = {}
 
     for i = 1, maxPower do
         local runeStartTime, runeDuration, runeReady = GetRuneCooldown(i)
+
         if runeReady then
             table.insert(runeReadyList, { index = i })
         else
@@ -228,13 +296,13 @@ local function UpdateRuneDisplay()
 
     for runePosition = 1, maxPower do
         local i = order[runePosition]
-        local runeBar = RUNE_BARS[i]
+        local runeBar = runeBars[i]
 
         runeBar:ClearAllPoints()
         if runePosition == 1 then
             runeBar:SetPoint("LEFT", parent, "LEFT", 1, 0)
         else
-            runeBar:SetPoint("LEFT", RUNE_BARS[order[runePosition-1]], "RIGHT", 1, 0)
+            runeBar:SetPoint("LEFT", runeBars[order[runePosition-1]], "RIGHT", 1, 0)
         end
 
         runeBar:Show()
@@ -262,20 +330,22 @@ local function UpdateComboDisplay()
         end
     end
 
-    if #COMBO_POINTS ~= powerMax then
+    if #comboPoints ~= powerMax then
         CreateComboPoints(powerMax)
         LayoutComboPoints()
     end
 
-    local powerBarColourR, powerBarColourG, powerBarColourB, powerBarColourA = FetchPowerBarColour()
+    local powerBarColourR, powerBarColourG, powerBarColourB, powerBarColourA = GetPowerBarColor()
     local chargedComboPointColourR, chargedComboPointColourG, chargedComboPointColourB, chargedComboPointColourA = unpack(BCDM.db.profile.General.Colours.SecondaryPower["CHARGED_COMBO_POINTS"] or {0.25, 0.5, 1.0, 1.0})
 
     for i = 1, powerMax do
-        local bar = COMBO_POINTS[i]
+        local bar = comboPoints[i]
+
         if i <= powerCurrent then
             bar:SetValue(1)
             if chargedLookup[i] then
-                bar:SetStatusBarColor(chargedComboPointColourR, chargedComboPointColourG, chargedComboPointColourB, chargedComboPointColourA or 1)
+                bar:SetStatusBarColor(chargedComboPointColourR, chargedComboPointColourG, 
+                                     chargedComboPointColourB, chargedComboPointColourA or 1)
             else
                 bar:SetStatusBarColor(powerBarColourR, powerBarColourG, powerBarColourB, powerBarColourA or 1)
             end
@@ -287,100 +357,181 @@ local function UpdateComboDisplay()
     end
 end
 
+local function StartEssenceOnUpdate(tick, tickDuration, nextTickTime)
+    tick.bar:SetScript("OnUpdate", function(self)
+        local now = GetTime()
+        local remaining = math.max(0, nextTickTime - now)
 
-local function FetchAuraStacks(spellId)
+        if remaining <= 0 then
+            self:SetScript("OnUpdate", nil)
+            tick.bar:SetValue(1)
+            local r, g, b, a = GetPowerBarColor()
+            tick.bar:SetStatusBarColor(r, g, b, a)
+            return
+        end
+
+        local value = 1 - (remaining / tickDuration)
+        tick.bar:SetValue(value)
+
+        local rechargeColour = BCDM.db.profile.General.Colours.SecondaryPower["ESSENCE_RECHARGE"]
+        if rechargeColour then
+            tick.bar:SetStatusBarColor(rechargeColour[1], rechargeColour[2], rechargeColour[3], rechargeColour[4] or 1)
+        end
+    end)
+end
+
+local function UpdateEssenceDisplay()
+    local parent = BCDM.SecondaryPowerBar
+    if not parent or #essenceTicks == 0 then return end
+
+    local powerCurrent = UnitPower("player", Enum.PowerType.Essence) or 0
+    local r, g, b, a = GetPowerBarColor()
+
+    for i = 1, #essenceTicks do
+        local tick = essenceTicks[i]
+        local bar = tick.bar
+
+        bar:Show()
+
+        if i <= powerCurrent then
+            bar:SetScript("OnUpdate", nil)
+            bar:SetValue(1)
+            bar:SetStatusBarColor(r, g, b, a)
+        elseif i == powerCurrent + 1 and parent._NextEssenceTick then
+            local regen = GetPowerRegenForPowerType(Enum.PowerType.Essence) or 0.2
+            local tickDuration = 1 / regen
+            StartEssenceOnUpdate(tick, tickDuration, parent._NextEssenceTick)
+        else
+            bar:SetScript("OnUpdate", nil)
+            bar:SetValue(0)
+            bar:SetStatusBarColor(0, 0, 0, 1)
+        end
+    end
+end
+
+local function GetAuraStacks(spellId)
     local auraData = C_UnitAuras.GetPlayerAuraBySpellID(spellId)
-    if auraData then return auraData.applications or 0 end
+    if auraData then
+        return auraData.applications or 0
+    end
     return 0
 end
 
 local function IsInMetamorphosis(spellId)
     local auraData = C_UnitAuras.GetPlayerAuraBySpellID(spellId)
-    if auraData then return true end
+    return auraData ~= nil
 end
 
-local function FetchSpellCharges(spellId)
-    local spellCharges = C_Spell.GetSpellCastCount(spellId)
-    return spellCharges
+local function GetSpellCharges(spellId)
+    return C_Spell.GetSpellCastCount(spellId)
 end
 
 local function UpdatePowerValues()
     local powerType = DetectSecondaryPower()
-    local SecondaryPowerBar = BCDM.SecondaryPowerBar
-    if not powerType then if SecondaryPowerBar then SecondaryPowerBar:Hide() end return end
-    if not SecondaryPowerBar then return end
-
+    local secondaryPowerBar = BCDM.SecondaryPowerBar
+    if not powerType then if secondaryPowerBar then secondaryPowerBar:Hide() end return end
+    if not secondaryPowerBar then return end
     local powerCurrent = 0
-
     if powerType == "STAGGER" then
         BCDM:ClearTicks()
         powerCurrent = UnitStagger("player") or 0
         local powerMax = UnitHealthMax("player") or 0
-        SecondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-        SecondaryPowerBar.Status:SetValue(powerCurrent)
-        SecondaryPowerBar.Text:SetText(tostring(AbbreviateLargeNumbers(powerCurrent)))
-        SecondaryPowerBar.Status:Show()
+        secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(AbbreviateLargeNumbers(powerCurrent)))
+        secondaryPowerBar.Status:Show()
     elseif powerType == Enum.PowerType.Maelstrom then
-        powerCurrent = FetchAuraStacks(344179)
-        SecondaryPowerBar.Status:SetMinMaxValues(0, 10)
-        SecondaryPowerBar.Status:SetValue(powerCurrent)
-        SecondaryPowerBar.Text:SetText(tostring(powerCurrent))
-        SecondaryPowerBar.Status:Show()
+        powerCurrent = GetAuraStacks(344179)
+        secondaryPowerBar.Status:SetMinMaxValues(0, 10)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
     elseif powerType == "SOUL" then
         local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534)
         local isInMeta = IsInMetamorphosis(1217607)
-        powerCurrent = FetchSpellCharges(1217605)
-        SecondaryPowerBar.Status:SetMinMaxValues(0, (isInMeta and 40) or (hasSoulGlutton and 35 or 50))
-        SecondaryPowerBar.Status:SetValue(powerCurrent)
-        SecondaryPowerBar.Text:SetText(tostring(powerCurrent))
-        SecondaryPowerBar.Status:Show()
+        powerCurrent = GetSpellCharges(1217605)
+        secondaryPowerBar.Status:SetMinMaxValues(0, (isInMeta and 40) or (hasSoulGlutton and 35 or 50))
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
     elseif powerType == Enum.PowerType.Chi then
         powerCurrent = UnitPower("player", Enum.PowerType.Chi) or 0
         local powerMax = UnitPowerMax("player", Enum.PowerType.Chi) or 0
-        SecondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-        SecondaryPowerBar.Status:SetValue(powerCurrent)
-        SecondaryPowerBar.Text:SetText(tostring(powerCurrent))
-        SecondaryPowerBar.Status:Show()
+        secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
     elseif powerType == Enum.PowerType.SoulShards then
         powerCurrent = UnitPower("player", Enum.PowerType.SoulShards, true)
-        SecondaryPowerBar.Status:SetMinMaxValues(0, 50)
-        SecondaryPowerBar.Status:SetValue(powerCurrent)
-        SecondaryPowerBar.Text:SetText(string.format("%.1f", powerCurrent / 10))
-        SecondaryPowerBar.Status:Show()
+        secondaryPowerBar.Status:SetMinMaxValues(0, 50)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(string.format("%.1f", powerCurrent / 10))
+        secondaryPowerBar.Status:Show()
     elseif powerType == Enum.PowerType.HolyPower then
         powerCurrent = UnitPower("player", Enum.PowerType.HolyPower) or 0
         local powerMax = UnitPowerMax("player", Enum.PowerType.HolyPower) or 0
-        SecondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-        SecondaryPowerBar.Status:SetValue(powerCurrent)
-        SecondaryPowerBar.Text:SetText(tostring(powerCurrent))
-        SecondaryPowerBar.Status:Show()
+        secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
     elseif powerType == Enum.PowerType.ComboPoints then
-        SecondaryPowerBar.Status:Show()
-        SecondaryPowerBar.Status:SetValue(0)
+        secondaryPowerBar.Status:Show()
+        secondaryPowerBar.Status:SetValue(0)
         UpdateComboDisplay()
-        SecondaryPowerBar.Text:SetText(tostring(UnitPower("player", Enum.PowerType.ComboPoints) or 0))
+        secondaryPowerBar.Text:SetText(tostring(UnitPower("player", Enum.PowerType.ComboPoints) or 0))
     elseif powerType == Enum.PowerType.Essence then
+        -- Inspired by Sensei's Resource Bar - <https://www.curseforge.com/wow/addons/senseiclassresourcebar>
         powerCurrent = UnitPower("player", Enum.PowerType.Essence) or 0
         local powerMax = UnitPowerMax("player", Enum.PowerType.Essence) or 0
-        SecondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-        SecondaryPowerBar.Status:SetValue(powerCurrent)
-        SecondaryPowerBar.Text:SetText(tostring(powerCurrent))
-        SecondaryPowerBar.Status:Show()
+        local essenceRechargeRate = GetPowerRegenForPowerType(Enum.PowerType.Essence) or 0.2
+        local tickDuration = 5 / (5 / (1 / essenceRechargeRate))
+        local currentTime = GetTime()
+        secondaryPowerBar._NextEssenceTick = secondaryPowerBar._NextEssenceTick or nil
+        secondaryPowerBar._LastEssence = secondaryPowerBar._LastEssence or powerCurrent
+        if powerCurrent > secondaryPowerBar._LastEssence then
+            if powerCurrent < powerMax then
+                secondaryPowerBar._NextEssenceTick = currentTime + tickDuration
+            else
+                secondaryPowerBar._NextEssenceTick = nil
+            end
+        end
+        if powerCurrent < powerMax and not secondaryPowerBar._NextEssenceTick then secondaryPowerBar._NextEssenceTick = currentTime + tickDuration end
+        if powerCurrent >= powerMax then secondaryPowerBar._NextEssenceTick = nil end
+        secondaryPowerBar._LastEssence = powerCurrent
+        UpdateEssenceDisplay()
+        secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
+        BCDM:CreateTicks(powerMax)
     elseif powerType == Enum.PowerType.ArcaneCharges then
         powerCurrent = UnitPower("player", Enum.PowerType.ArcaneCharges) or 0
         local powerMax = UnitPowerMax("player", Enum.PowerType.ArcaneCharges) or 0
-        SecondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-        SecondaryPowerBar.Status:SetValue(powerCurrent)
-        SecondaryPowerBar.Text:SetText(tostring(powerCurrent))
-        SecondaryPowerBar.Status:Show()
-    elseif powerType == Enum.PowerType.Runes then SecondaryPowerBar.Status:Hide() UpdateRuneDisplay() end
-    SecondaryPowerBar:Show()
+        secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
+    elseif powerType == Enum.PowerType.Runes then
+        secondaryPowerBar.Status:Hide()
+        UpdateRuneDisplay()
+    end
+
+    secondaryPowerBar:Show()
 end
 
 local function CreateTicksBasedOnPowerType()
     local secondaryPowerResource = DetectSecondaryPower()
-    if secondaryPowerResource == "SOUL" then local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534) BCDM:CreateTicks(hasSoulGlutton and 7 or 10) return end
-    if secondaryPowerResource == "STAGGER" then return end
+
+    if secondaryPowerResource == "SOUL" then
+        local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534)
+        BCDM:CreateTicks(hasSoulGlutton and 7 or 10)
+        return
+    end
+
+    if secondaryPowerResource == "STAGGER" then
+        return
+    end
+
     if secondaryPowerResource == Enum.PowerType.Runes then
         BCDM:ClearTicks()
         CreateRuneBars()
@@ -388,31 +539,59 @@ local function CreateTicksBasedOnPowerType()
         UpdateRuneDisplay()
         return
     end
-    if secondaryPowerResource == Enum.PowerType.SoulShards then BCDM:CreateTicks(5) return end
-    if secondaryPowerResource == Enum.PowerType.Maelstrom then BCDM:CreateTicks(10) return end
+
+    if secondaryPowerResource == Enum.PowerType.Essence then
+        local maxEssence = UnitPowerMax("player", Enum.PowerType.Essence) or 0
+        CreateEssenceTicks(maxEssence)
+        LayoutEssenceTicks()
+        UpdateEssenceDisplay()
+        BCDM:CreateTicks(maxEssence)
+        return
+    end
+
+    if secondaryPowerResource == Enum.PowerType.SoulShards then
+        BCDM:CreateTicks(5)
+        return
+    end
+
+    if secondaryPowerResource == Enum.PowerType.Maelstrom then
+        BCDM:CreateTicks(10)
+        return
+    end
+
     local maxPower = UnitPowerMax("player", secondaryPowerResource) or 0
-    if maxPower > 0 then BCDM:CreateTicks(maxPower) end
+    if maxPower > 0 then
+        BCDM:CreateTicks(maxPower)
+    end
 end
 
 local function UpdateBarWidth()
-    local SecondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
-    local SecondaryPowerBar = BCDM.SecondaryPowerBar
+    local secondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
+    local secondaryPowerBar = BCDM.SecondaryPowerBar
 
-    if not SecondaryPowerBar or not SecondaryPowerBarDB.MatchWidthOfAnchor then return end
+    if not secondaryPowerBar or not secondaryPowerBarDB.MatchWidthOfAnchor then return end
 
-    local anchorFrame = _G[SecondaryPowerBarDB.Layout[2]]
+    local anchorFrame = _G[secondaryPowerBarDB.Layout[2]]
     if not anchorFrame then return end
-    if resizeTimer then resizeTimer:Cancel() end
+
+    if resizeTimer then
+        resizeTimer:Cancel()
+    end
+
     resizeTimer = C_Timer.After(0.1, function()
         local anchorWidth = anchorFrame:GetWidth()
-        SecondaryPowerBar:SetWidth(anchorWidth)
+        secondaryPowerBar:SetWidth(anchorWidth)
         local powerType = DetectSecondaryPower()
 
-        if powerType == Enum.PowerType.Runes and #RUNE_BARS > 0 then
+        if powerType == Enum.PowerType.Runes and #runeBars > 0 then
             LayoutRuneBars()
-        elseif powerType == Enum.PowerType.ComboPoints and #COMBO_POINTS > 0 then
+        elseif powerType == Enum.PowerType.ComboPoints and #comboPoints > 0 then
             LayoutComboPoints()
+        elseif powerType == Enum.PowerType.Essence and #essenceTicks > 0 then
+            LayoutEssenceTicks()
+            UpdateEssenceDisplay()
         end
+
         resizeTimer = nil
     end)
 end
@@ -423,71 +602,71 @@ local function SetHooks()
 end
 
 function BCDM:CreateSecondaryPowerBar()
-    local GeneralDB = BCDM.db.profile.General
-    local SecondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
+    local generalDB = BCDM.db.profile.General
+    local secondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
 
     SetHooks()
 
-    local SecondaryPowerBar = CreateFrame("Frame", "BCDM_SecondaryPowerBar", UIParent, "BackdropTemplate")
+    local secondaryPowerBar = CreateFrame("Frame", "BCDM_SecondaryPowerBar", UIParent, "BackdropTemplate")
 
-    SecondaryPowerBar:SetBackdrop(BCDM.BACKDROP)
-    SecondaryPowerBar:SetBackdropColor(SecondaryPowerBarDB.BackgroundColour[1], SecondaryPowerBarDB.BackgroundColour[2], SecondaryPowerBarDB.BackgroundColour[3], SecondaryPowerBarDB.BackgroundColour[4])
-    SecondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 1)
-    SecondaryPowerBar:SetSize(SecondaryPowerBarDB.Width, SecondaryPowerBarDB.Height)
-    SecondaryPowerBar:SetPoint(SecondaryPowerBarDB.Layout[1], _G[SecondaryPowerBarDB.Layout[2]], SecondaryPowerBarDB.Layout[3], SecondaryPowerBarDB.Layout[4], SecondaryPowerBarDB.Layout[5])
-    SecondaryPowerBar:SetFrameStrata("LOW")
+    secondaryPowerBar:SetBackdrop(BCDM.BACKDROP)
+    secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
+    secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 1)
+    secondaryPowerBar:SetSize(secondaryPowerBarDB.Width, secondaryPowerBarDB.Height)
+    secondaryPowerBar:SetPoint(secondaryPowerBarDB.Layout[1], _G[secondaryPowerBarDB.Layout[2]], secondaryPowerBarDB.Layout[3], secondaryPowerBarDB.Layout[4], secondaryPowerBarDB.Layout[5])
+    secondaryPowerBar:SetFrameStrata("LOW")
 
-    SecondaryPowerBar.Status = CreateFrame("StatusBar", nil, SecondaryPowerBar)
-    SecondaryPowerBar.Status:SetPoint("TOPLEFT", SecondaryPowerBar, "TOPLEFT", 1, -1)
-    SecondaryPowerBar.Status:SetPoint("BOTTOMRIGHT", SecondaryPowerBar, "BOTTOMRIGHT", -1, 1)
-    SecondaryPowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
+    secondaryPowerBar.Status = CreateFrame("StatusBar", nil, secondaryPowerBar)
+    secondaryPowerBar.Status:SetPoint("TOPLEFT", secondaryPowerBar, "TOPLEFT", 1, -1)
+    secondaryPowerBar.Status:SetPoint("BOTTOMRIGHT", secondaryPowerBar, "BOTTOMRIGHT", -1, 1)
+    secondaryPowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
 
-    SecondaryPowerBar.TickFrame = CreateFrame("Frame", nil, SecondaryPowerBar)
-    SecondaryPowerBar.TickFrame:SetAllPoints(SecondaryPowerBar)
-    SecondaryPowerBar.TickFrame:SetFrameLevel(SecondaryPowerBar.Status:GetFrameLevel() + 10)
-    SecondaryPowerBar.Ticks = {}
+    secondaryPowerBar.TickFrame = CreateFrame("Frame", nil, secondaryPowerBar)
+    secondaryPowerBar.TickFrame:SetAllPoints(secondaryPowerBar)
+    secondaryPowerBar.TickFrame:SetFrameLevel(secondaryPowerBar.Status:GetFrameLevel() + 10)
+    secondaryPowerBar.Ticks = {}
 
-    SecondaryPowerBar.Status:SetScript("OnSizeChanged", function() CreateTicksBasedOnPowerType() end)
+    secondaryPowerBar.Status:SetScript("OnSizeChanged", function() CreateTicksBasedOnPowerType() end)
 
-    SecondaryPowerBar.Text = SecondaryPowerBar.Status:CreateFontString(nil, "OVERLAY")
-    SecondaryPowerBar.Text:SetFont(BCDM.Media.Font, SecondaryPowerBarDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
-    SecondaryPowerBar.Text:SetTextColor(SecondaryPowerBarDB.Text.Colour[1], SecondaryPowerBarDB.Text.Colour[2], SecondaryPowerBarDB.Text.Colour[3], 1)
-    SecondaryPowerBar.Text:SetPoint(SecondaryPowerBarDB.Text.Layout[1], SecondaryPowerBar, SecondaryPowerBarDB.Text.Layout[2], SecondaryPowerBarDB.Text.Layout[3], SecondaryPowerBarDB.Text.Layout[4])
+    secondaryPowerBar.Text = secondaryPowerBar.Status:CreateFontString(nil, "OVERLAY")
+    secondaryPowerBar.Text:SetFont(BCDM.Media.Font, secondaryPowerBarDB.Text.FontSize, generalDB.Fonts.FontFlag)
+    secondaryPowerBar.Text:SetTextColor(secondaryPowerBarDB.Text.Colour[1], secondaryPowerBarDB.Text.Colour[2], secondaryPowerBarDB.Text.Colour[3], 1)
+    secondaryPowerBar.Text:SetPoint(secondaryPowerBarDB.Text.Layout[1], secondaryPowerBar, secondaryPowerBarDB.Text.Layout[2], secondaryPowerBarDB.Text.Layout[3], secondaryPowerBarDB.Text.Layout[4])
 
-    if GeneralDB.Fonts.Shadow.Enabled then
-        SecondaryPowerBar.Text:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
-        SecondaryPowerBar.Text:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
+    if generalDB.Fonts.Shadow.Enabled then
+        secondaryPowerBar.Text:SetShadowColor(generalDB.Fonts.Shadow.Colour[1], generalDB.Fonts.Shadow.Colour[2], generalDB.Fonts.Shadow.Colour[3], generalDB.Fonts.Shadow.Colour[4])
+        secondaryPowerBar.Text:SetShadowOffset(generalDB.Fonts.Shadow.OffsetX, generalDB.Fonts.Shadow.OffsetY)
     else
-        SecondaryPowerBar.Text:SetShadowColor(0, 0, 0, 0)
-        SecondaryPowerBar.Text:SetShadowOffset(0, 0)
+        secondaryPowerBar.Text:SetShadowColor(0, 0, 0, 0)
+        secondaryPowerBar.Text:SetShadowOffset(0, 0)
     end
 
-    SecondaryPowerBar.Text:SetText("")
-    if SecondaryPowerBarDB.Text.Enabled then
-        SecondaryPowerBar.Text:Show()
+    secondaryPowerBar.Text:SetText("")
+    if secondaryPowerBarDB.Text.Enabled then
+        secondaryPowerBar.Text:Show()
     else
-        SecondaryPowerBar.Text:Hide()
+        secondaryPowerBar.Text:Hide()
     end
 
-    BCDM.SecondaryPowerBar = SecondaryPowerBar
+    BCDM.SecondaryPowerBar = secondaryPowerBar
 
-    if SecondaryPowerBarDB.Enabled then
+    if secondaryPowerBarDB.Enabled then
         if DetectSecondaryPower() then
-            SecondaryPowerBar.Status:SetStatusBarColor(FetchPowerBarColour())
-            SecondaryPowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
-            SecondaryPowerBar.Status:SetValue(UnitPower("player"))
+            secondaryPowerBar.Status:SetStatusBarColor(GetPowerBarColor())
+            secondaryPowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
+            secondaryPowerBar.Status:SetValue(UnitPower("player"))
             NudgeSecondaryPowerBar("BCDM_SecondaryPowerBar", -0.1, 0)
-            SecondaryPowerBar:Show()
+            secondaryPowerBar:Show()
         end
 
-        SecondaryPowerBar:RegisterEvent("UNIT_POWER_UPDATE")
-        SecondaryPowerBar:RegisterEvent("UNIT_MAXPOWER")
-        SecondaryPowerBar:RegisterEvent("PLAYER_ENTERING_WORLD")
-        SecondaryPowerBar:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN")
-        SecondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
-        SecondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
+        secondaryPowerBar:RegisterEvent("UNIT_POWER_UPDATE")
+        secondaryPowerBar:RegisterEvent("UNIT_MAXPOWER")
+        secondaryPowerBar:RegisterEvent("PLAYER_ENTERING_WORLD")
+        secondaryPowerBar:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN")
+        secondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
+        secondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
 
-        SecondaryPowerBar:SetScript("OnEvent", function(self, event, ...)
+        secondaryPowerBar:SetScript("OnEvent", function(self, event, ...)
             if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then
                 if DetectSecondaryPower() == Enum.PowerType.Runes then
                     UpdateRuneDisplay()
@@ -497,83 +676,78 @@ function BCDM:CreateSecondaryPowerBar()
             end
         end)
     else
-        SecondaryPowerBar:Hide()
-        SecondaryPowerBar:SetScript("OnEvent", nil)
-        SecondaryPowerBar:UnregisterAllEvents()
+        secondaryPowerBar:Hide()
+        secondaryPowerBar:SetScript("OnEvent", nil)
+        secondaryPowerBar:UnregisterAllEvents()
     end
 
     UpdateBarWidth()
 end
 
 function BCDM:UpdateSecondaryPowerBar()
-    local CooldownManagerDB = BCDM.db.profile
-    local GeneralDB = CooldownManagerDB.General
-    local SecondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
+    local cooldownManagerDB = BCDM.db.profile
+    local generalDB = cooldownManagerDB.General
+    local secondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
     local requiresSecondaryBar = DetectSecondaryPower()
 
     if not requiresSecondaryBar then if BCDM.SecondaryPowerBar then BCDM.SecondaryPowerBar:Hide() end return end
 
-    local SecondaryPowerBar = BCDM.SecondaryPowerBar
-    if not SecondaryPowerBar then return end
+    local secondaryPowerBar = BCDM.SecondaryPowerBar
+    if not secondaryPowerBar then return end
+    secondaryPowerBar:SetBackdrop(BCDM.BACKDROP)
+    secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
+    secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 1)
+    secondaryPowerBar:SetSize(secondaryPowerBarDB.Width, secondaryPowerBarDB.Height)
 
-    SecondaryPowerBar:SetBackdrop(BCDM.BACKDROP)
-    SecondaryPowerBar:SetBackdropColor(SecondaryPowerBarDB.BackgroundColour[1], SecondaryPowerBarDB.BackgroundColour[2], SecondaryPowerBarDB.BackgroundColour[3], SecondaryPowerBarDB.BackgroundColour[4])
-    SecondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 1)
-    SecondaryPowerBar:SetSize(SecondaryPowerBarDB.Width, SecondaryPowerBarDB.Height)
-
-    SecondaryPowerBar:ClearAllPoints()
-    SecondaryPowerBar:SetPoint(SecondaryPowerBarDB.Layout[1], _G[SecondaryPowerBarDB.Layout[2]], SecondaryPowerBarDB.Layout[3], SecondaryPowerBarDB.Layout[4], SecondaryPowerBarDB.Layout[5])
-
-    SecondaryPowerBar.Status:SetPoint("TOPLEFT", SecondaryPowerBar, "TOPLEFT", 1, -1)
-    SecondaryPowerBar.Status:SetPoint("BOTTOMRIGHT", SecondaryPowerBar, "BOTTOMRIGHT", -1, 1)
-    SecondaryPowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
-    SecondaryPowerBar.Status:SetStatusBarColor(FetchPowerBarColour())
-    SecondaryPowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
-    SecondaryPowerBar.Status:SetValue(UnitPower("player"))
-
-    SecondaryPowerBar.Text:SetFont(BCDM.Media.Font, SecondaryPowerBarDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
-    SecondaryPowerBar.Text:SetTextColor(SecondaryPowerBarDB.Text.Colour[1], SecondaryPowerBarDB.Text.Colour[2], SecondaryPowerBarDB.Text.Colour[3], 1)
-    SecondaryPowerBar.Text:SetPoint(SecondaryPowerBarDB.Text.Layout[1], SecondaryPowerBar, SecondaryPowerBarDB.Text.Layout[2], SecondaryPowerBarDB.Text.Layout[3], SecondaryPowerBarDB.Text.Layout[4])
-
-    if GeneralDB.Fonts.Shadow.Enabled then
-        SecondaryPowerBar.Text:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
-        SecondaryPowerBar.Text:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
+    secondaryPowerBar:ClearAllPoints()
+    secondaryPowerBar:SetPoint(secondaryPowerBarDB.Layout[1], _G[secondaryPowerBarDB.Layout[2]], secondaryPowerBarDB.Layout[3], secondaryPowerBarDB.Layout[4], secondaryPowerBarDB.Layout[5])
+    secondaryPowerBar.Status:SetPoint("TOPLEFT", secondaryPowerBar, "TOPLEFT", 1, -1)
+    secondaryPowerBar.Status:SetPoint("BOTTOMRIGHT", secondaryPowerBar, "BOTTOMRIGHT", -1, 1)
+    secondaryPowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
+    secondaryPowerBar.Status:SetStatusBarColor(GetPowerBarColor())
+    secondaryPowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
+    secondaryPowerBar.Status:SetValue(UnitPower("player"))
+    secondaryPowerBar.Text:SetFont(BCDM.Media.Font, secondaryPowerBarDB.Text.FontSize, generalDB.Fonts.FontFlag)
+    secondaryPowerBar.Text:SetTextColor(secondaryPowerBarDB.Text.Colour[1], secondaryPowerBarDB.Text.Colour[2], secondaryPowerBarDB.Text.Colour[3], 1)
+    secondaryPowerBar.Text:SetPoint(secondaryPowerBarDB.Text.Layout[1], secondaryPowerBar, secondaryPowerBarDB.Text.Layout[2], secondaryPowerBarDB.Text.Layout[3], secondaryPowerBarDB.Text.Layout[4])
+    if generalDB.Fonts.Shadow.Enabled then
+        secondaryPowerBar.Text:SetShadowColor(generalDB.Fonts.Shadow.Colour[1], generalDB.Fonts.Shadow.Colour[2], generalDB.Fonts.Shadow.Colour[3], generalDB.Fonts.Shadow.Colour[4])
+        secondaryPowerBar.Text:SetShadowOffset(generalDB.Fonts.Shadow.OffsetX, generalDB.Fonts.Shadow.OffsetY)
     else
-        SecondaryPowerBar.Text:SetShadowColor(0, 0, 0, 0)
-        SecondaryPowerBar.Text:SetShadowOffset(0, 0)
+        secondaryPowerBar.Text:SetShadowColor(0, 0, 0, 0)
+        secondaryPowerBar.Text:SetShadowOffset(0, 0)
     end
+    secondaryPowerBar.Text:SetText("")
+    if secondaryPowerBarDB.Text.Enabled then secondaryPowerBar.Text:Show() else secondaryPowerBar.Text:Hide() end
+    if secondaryPowerBarDB.Enabled then
+        secondaryPowerBar:RegisterEvent("UNIT_POWER_UPDATE")
+        secondaryPowerBar:RegisterEvent("UNIT_MAXPOWER")
+        secondaryPowerBar:RegisterEvent("PLAYER_ENTERING_WORLD")
+        secondaryPowerBar:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN")
+        secondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
+        secondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
 
-    SecondaryPowerBar.Text:SetText("")
-    if SecondaryPowerBarDB.Text.Enabled then SecondaryPowerBar.Text:Show() else SecondaryPowerBar.Text:Hide() end
-
-    if SecondaryPowerBarDB.Enabled then
-        SecondaryPowerBar:RegisterEvent("UNIT_POWER_UPDATE")
-        SecondaryPowerBar:RegisterEvent("UNIT_MAXPOWER")
-        SecondaryPowerBar:RegisterEvent("PLAYER_ENTERING_WORLD")
-        SecondaryPowerBar:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN")
-        SecondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
-        SecondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
-
-        SecondaryPowerBar:SetScript("OnEvent", function(self, event, ...) if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then if DetectSecondaryPower() == Enum.PowerType.Runes then UpdateRuneDisplay() end else UpdatePowerValues() end end)
-
-        SecondaryPowerBar.Status:SetScript("OnSizeChanged", function()
+        secondaryPowerBar:SetScript("OnEvent", function(self, event, ...) if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then if DetectSecondaryPower() == Enum.PowerType.Runes then UpdateRuneDisplay() end else UpdatePowerValues() end end)
+        secondaryPowerBar.Status:SetScript("OnSizeChanged", function()
             CreateTicksBasedOnPowerType()
-            if DetectSecondaryPower() == Enum.PowerType.ComboPoints and #COMBO_POINTS > 0 then
+            local powerType = DetectSecondaryPower()
+            if powerType == Enum.PowerType.ComboPoints and #comboPoints > 0 then
                 LayoutComboPoints()
+            elseif powerType == Enum.PowerType.Essence and #essenceTicks > 0 then
+                LayoutEssenceTicks()
+                UpdateEssenceDisplay()
             end
         end)
-
         UpdatePowerValues()
         CreateTicksBasedOnPowerType()
         NudgeSecondaryPowerBar("BCDM_SecondaryPowerBar", -0.1, 0)
-        SecondaryPowerBar:Show()
+        secondaryPowerBar:Show()
     else
-        SecondaryPowerBar:Hide()
-        SecondaryPowerBar:SetScript("OnEvent", nil)
-        SecondaryPowerBar.Status:SetScript("OnSizeChanged", nil)
-        SecondaryPowerBar:UnregisterAllEvents()
+        secondaryPowerBar:Hide()
+        secondaryPowerBar:SetScript("OnEvent", nil)
+        secondaryPowerBar.Status:SetScript("OnSizeChanged", nil)
+        secondaryPowerBar:UnregisterAllEvents()
     end
-
     UpdateBarWidth()
 end
 
