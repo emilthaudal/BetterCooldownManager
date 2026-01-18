@@ -1,9 +1,4 @@
 local _, BCDM = ...
-local activeGlowingIcons = {}
-local LCG = LibStub("LibCustomGlow-1.0")
-
-local GLOW_KEY = "_BCDMGlow"
-local shouldBypassHook = false
 
 local function NudgeViewer(viewerName, xOffset, yOffset)
     local viewerFrame = _G[viewerName]
@@ -67,71 +62,6 @@ local function ApplyCooldownText(cooldownViewer)
             end
         end
     end
-end
-
-local function IsCooldownViewerIcon(button)
-    if not button then return false end
-    local currentParent = button
-    for _ = 1, 6 do
-        currentParent = currentParent:GetParent()
-        if not currentParent then return false end
-        local parentName = currentParent:GetName()
-        if parentName then
-            for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do
-                if parentName == viewerName then
-                    return true
-                end
-            end
-        end
-    end
-    return false
-end
-
-local function StartGlow(iconFrame)
-    if iconFrame._bcdmGlowActive then return end
-
-    local glowSettings = BCDM.db.profile.CooldownManager.General.Glow
-    if not glowSettings or not glowSettings.Enabled then return end
-
-    LCG.PixelGlow_Stop(iconFrame, GLOW_KEY)
-    LCG.AutoCastGlow_Stop(iconFrame, GLOW_KEY)
-
-    if glowSettings.GlowType == "PIXEL" then
-        LCG.PixelGlow_Start(
-            iconFrame,
-            glowSettings.Colour,
-            glowSettings.Lines,
-            glowSettings.Frequency,
-            nil,
-            glowSettings.Thickness,
-            glowSettings.XOffset,
-            glowSettings.YOffset,
-            true,
-            GLOW_KEY
-        )
-    elseif glowSettings.GlowType == "AUTO_CAST" then
-        LCG.AutoCastGlow_Start(
-            iconFrame,
-            glowSettings.Colour,
-            glowSettings.Particles,
-            glowSettings.Frequency,
-            glowSettings.Scale,
-            glowSettings.XOffset,
-            glowSettings.YOffset,
-            GLOW_KEY
-        )
-    end
-
-    iconFrame._bcdmGlowActive = true
-    activeGlowingIcons[iconFrame] = true
-end
-
-local function StopGlow(iconFrame)
-    if not iconFrame._bcdmGlowActive then return end
-    LCG.PixelGlow_Stop(iconFrame, GLOW_KEY)
-    LCG.AutoCastGlow_Stop(iconFrame, GLOW_KEY)
-    iconFrame._bcdmGlowActive = nil
-    activeGlowingIcons[iconFrame] = nil
 end
 
 local function StyleBuffsBars()
@@ -280,46 +210,10 @@ local function StyleIcons()
     end
 end
 
-local function HideBlizzardGlow(iconFrame)
-    if iconFrame.SpellActivationAlert then
-        iconFrame.SpellActivationAlert:Hide()
-        if iconFrame.SpellActivationAlert.ProcLoopFlipbook then
-            iconFrame.SpellActivationAlert.ProcLoopFlipbook:Hide()
-        end
-        if iconFrame.SpellActivationAlert.ProcStartFlipbook then
-            iconFrame.SpellActivationAlert.ProcStartFlipbook:Hide()
-        end
-    end
-
-    if iconFrame.overlay then iconFrame.overlay:Hide() end
-    if iconFrame.Overlay then iconFrame.Overlay:Hide() end
-    if iconFrame.Glow then iconFrame.Glow:Hide() end
-end
-
-local function SetupGlowHooks()
-    if ActionButtonSpellAlertManager then
-        if ActionButtonSpellAlertManager.ShowAlert then
-            hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(_, button)
-                if shouldBypassHook or not IsCooldownViewerIcon(button) then return end
-                HideBlizzardGlow(button)
-                StartGlow(button)
-            end)
-        end
-
-        if ActionButtonSpellAlertManager.HideAlert then
-            hooksecurefunc(ActionButtonSpellAlertManager, "HideAlert", function(_, button)
-                if not IsCooldownViewerIcon(button) then return end
-                StopGlow(button)
-            end)
-        end
-    end
-end
-
 local function SetHooks()
     hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() if InCombatLockdown() then return end Position() end)
     hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end Position() end)
     hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function() if InCombatLockdown() then return end BCDM:UpdateCooldownViewer("Buffs") BCDM:UpdateBCDM() end)
-    SetupGlowHooks()
 end
 
 local function StyleChargeCount()
@@ -400,20 +294,6 @@ local function SetupCenterBuffs()
     else
         centerBuffsEventFrame:SetScript("OnUpdate", nil)
         centerBuffsEventFrame:Hide()
-    end
-end
-
-local function SetGlowType()
-    local glowSettings = BCDM.db.profile.CooldownManager.General.Glow
-
-    for iconFrame in pairs(activeGlowingIcons) do
-        LCG.PixelGlow_Stop(iconFrame, GLOW_KEY)
-        LCG.AutoCastGlow_Stop(iconFrame, GLOW_KEY)
-        iconFrame._bcdmGlowActive = nil
-
-        if glowSettings and glowSettings.Enabled then
-            StartGlow(iconFrame)
-        end
     end
 end
 

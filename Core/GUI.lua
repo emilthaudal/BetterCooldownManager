@@ -245,127 +245,6 @@ local function CreateInformationTag(containerParent, labelDescription, textJusti
     return informationLabel
 end
 
-local function CreateGlowSettings(containerParent)
-    containerParent:ReleaseChildren()
-
-    local GlowEnabledCheckbox = AG:Create("CheckBox")
-    GlowEnabledCheckbox:SetLabel("Enable Glow")
-    GlowEnabledCheckbox:SetValue(BCDM.db.profile.CooldownManager.General.Glow.Enabled)
-    GlowEnabledCheckbox:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.Enabled = value BCDM:UpdateBCDM() CreateGlowSettings(containerParent) RefreshCustomGlowSettings() end)
-    GlowEnabledCheckbox:SetRelativeWidth(0.33)
-    containerParent:AddChild(GlowEnabledCheckbox)
-
-    local GlowTypeDropdown = AG:Create("Dropdown")
-    GlowTypeDropdown:SetLabel("Glow Type")
-    GlowTypeDropdown:SetList({ ["PIXEL"] = "Pixel", ["AUTO_CAST"] = "Auto Cast", })
-    GlowTypeDropdown:SetValue(BCDM.db.profile.CooldownManager.General.Glow.GlowType)
-    GlowTypeDropdown:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.GlowType = value BCDM:UpdateBCDM() CreateGlowSettings(containerParent) end)
-    GlowTypeDropdown:SetRelativeWidth(0.33)
-    containerParent:AddChild(GlowTypeDropdown)
-
-    local GlowColourPicker = AG:Create("ColorPicker")
-    GlowColourPicker:SetLabel("Glow Colour")
-    GlowColourPicker:SetColor(unpack(BCDM.db.profile.CooldownManager.General.Glow.Colour))
-    GlowColourPicker:SetCallback("OnValueChanged", function(_, _, r, g, b) BCDM.db.profile.CooldownManager.General.Glow.Colour = {r, g, b} BCDM:UpdateBCDM() end)
-    GlowColourPicker:SetRelativeWidth(0.33)
-    containerParent:AddChild(GlowColourPicker)
-
-    if BCDM.db.profile.CooldownManager.General.Glow.GlowType == "PIXEL" then
-        local GlowThicknessSlider = AG:Create("Slider")
-        GlowThicknessSlider:SetLabel("Thickness")
-        GlowThicknessSlider:SetValue(BCDM.db.profile.CooldownManager.General.Glow.Thickness)
-        GlowThicknessSlider:SetSliderValues(1, 10, 1)
-        GlowThicknessSlider:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.Thickness = value BCDM:UpdateBCDM() end)
-        GlowThicknessSlider:SetRelativeWidth(0.33)
-        containerParent:AddChild(GlowThicknessSlider)
-
-        local GlowLinesSlider = AG:Create("Slider")
-        GlowLinesSlider:SetLabel("Number of Lines")
-        GlowLinesSlider:SetValue(BCDM.db.profile.CooldownManager.General.Glow.Lines)
-        GlowLinesSlider:SetSliderValues(1, 20, 1)
-        GlowLinesSlider:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.Lines = value BCDM:UpdateBCDM() end)
-        GlowLinesSlider:SetRelativeWidth(0.33)
-        containerParent:AddChild(GlowLinesSlider)
-
-        BCDMGUI.GlowThicknessSlider = GlowThicknessSlider
-        BCDMGUI.GlowLinesSlider = GlowLinesSlider
-    elseif BCDM.db.profile.CooldownManager.General.Glow.GlowType == "AUTO_CAST" then
-        local GlowParticlesSlider = AG:Create("Slider")
-        GlowParticlesSlider:SetLabel("Particles")
-        GlowParticlesSlider:SetValue(BCDM.db.profile.CooldownManager.General.Glow.Particles)
-        GlowParticlesSlider:SetSliderValues(1, 10, 1)
-        GlowParticlesSlider:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.Particles = value BCDM:UpdateBCDM() end)
-        GlowParticlesSlider:SetRelativeWidth(0.33)
-        containerParent:AddChild(GlowParticlesSlider)
-
-        local GlowScaleSlider = AG:Create("Slider")
-        GlowScaleSlider:SetLabel("Scale")
-        GlowScaleSlider:SetValue(BCDM.db.profile.CooldownManager.General.Glow.Scale)
-        GlowScaleSlider:SetSliderValues(0.1, 1, 0.01)
-        GlowScaleSlider:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.Scale = value BCDM:UpdateBCDM() end)
-        GlowScaleSlider:SetRelativeWidth(0.33)
-        GlowScaleSlider:SetIsPercent(true)
-        containerParent:AddChild(GlowScaleSlider)
-
-        BCDMGUI.GlowParticlesSlider = GlowParticlesSlider
-        BCDMGUI.GlowScaleSlider = GlowScaleSlider
-    end
-
-    local GlowFrequencySlider = AG:Create("Slider")
-    GlowFrequencySlider:SetLabel("Frequency")
-    GlowFrequencySlider:SetValue(BCDM.db.profile.CooldownManager.General.Glow.Frequency)
-    GlowFrequencySlider:SetSliderValues(0.05, 1, 0.01)
-    GlowFrequencySlider:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.Frequency = value BCDM:UpdateBCDM() end)
-    GlowFrequencySlider:SetRelativeWidth(0.33)
-    containerParent:AddChild(GlowFrequencySlider)
-
-    local xOffsetSlider = AG:Create("Slider")
-    xOffsetSlider:SetLabel("X Offset")
-    xOffsetSlider:SetValue(BCDM.db.profile.CooldownManager.General.Glow.XOffset)
-    xOffsetSlider:SetSliderValues(-20, 20, 1)
-    xOffsetSlider:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.XOffset = value BCDM:UpdateBCDM() end)
-    xOffsetSlider:SetRelativeWidth(0.5)
-    containerParent:AddChild(xOffsetSlider)
-
-    local yOffsetSlider = AG:Create("Slider")
-    yOffsetSlider:SetLabel("Y Offset")
-    yOffsetSlider:SetValue(BCDM.db.profile.CooldownManager.General.Glow.YOffset)
-    yOffsetSlider:SetSliderValues(-20, 20, 1)
-    yOffsetSlider:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.General.Glow.YOffset = value BCDM:UpdateBCDM() end)
-    yOffsetSlider:SetRelativeWidth(0.5)
-    containerParent:AddChild(yOffsetSlider)
-
-    function RefreshCustomGlowSettings()
-        if BCDM.db.profile.CooldownManager.General.Glow.Enabled then
-            GlowTypeDropdown:SetDisabled(false)
-            GlowColourPicker:SetDisabled(false)
-            GlowFrequencySlider:SetDisabled(false)
-            if BCDM.db.profile.CooldownManager.General.Glow.GlowType == "PIXEL" then
-                BCDMGUI.GlowThicknessSlider:SetDisabled(false)
-                BCDMGUI.GlowLinesSlider:SetDisabled(false)
-            elseif BCDM.db.profile.CooldownManager.General.Glow.GlowType == "AUTO_CAST" then
-                BCDMGUI.GlowParticlesSlider:SetDisabled(false)
-                BCDMGUI.GlowScaleSlider:SetDisabled(false)
-            end
-        else
-            GlowTypeDropdown:SetDisabled(true)
-            GlowColourPicker:SetDisabled(true)
-            GlowFrequencySlider:SetDisabled(true)
-            if BCDM.db.profile.CooldownManager.General.Glow.GlowType == "PIXEL" then
-                BCDMGUI.GlowThicknessSlider:SetDisabled(true)
-                BCDMGUI.GlowLinesSlider:SetDisabled(true)
-            elseif BCDM.db.profile.CooldownManager.General.Glow.GlowType == "AUTO_CAST" then
-                BCDMGUI.GlowParticlesSlider:SetDisabled(true)
-                BCDMGUI.GlowScaleSlider:SetDisabled(true)
-            end
-        end
-    end
-
-    RefreshCustomGlowSettings()
-
-    return containerParent
-end
-
 local function CreateCooldownTextSettings(containerParent)
     local CooldownTextDB = BCDM.db.profile.CooldownManager.General.CooldownText
 
@@ -784,8 +663,6 @@ local function CreateGlobalSettings(parentContainer)
     CustomGlowContainer:SetFullWidth(true)
     CustomGlowContainer:SetLayout("Flow")
     globalSettingsContainer:AddChild(CustomGlowContainer)
-
-    CreateGlowSettings(CustomGlowContainer)
 
     CreateCooldownTextSettings(globalSettingsContainer)
 
