@@ -53,10 +53,8 @@ local function IsCooldownFrameActive(customIcon)
 end
 
 local function FetchItemData(itemId)
-    local itemCount = C_Item.GetItemCount(itemId)
-    if itemId == 224464 or itemId == 5512 then itemCount = C_Item.GetItemCount(itemId, false, true) end
     local startTime, durationTime = C_Item.GetItemCooldown(itemId)
-    return itemCount, startTime, durationTime
+    return startTime, durationTime
 end
 
 local function CreateCustomIcon(itemId)
@@ -83,19 +81,6 @@ local function CreateCustomIcon(itemId)
     HighLevelContainer:SetAllPoints(customIcon)
     HighLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
 
-    customIcon.Charges = HighLevelContainer:CreateFontString(nil, "OVERLAY")
-    customIcon.Charges:SetFont(BCDM.Media.Font, CustomDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
-    customIcon.Charges:SetPoint(CustomDB.Text.Layout[1], customIcon, CustomDB.Text.Layout[2], CustomDB.Text.Layout[3], CustomDB.Text.Layout[4])
-    customIcon.Charges:SetTextColor(CustomDB.Text.Colour[1], CustomDB.Text.Colour[2], CustomDB.Text.Colour[3], 1)
-    customIcon.Charges:SetText(tostring(select(1, FetchItemData(itemId)) or ""))
-    if GeneralDB.Fonts.Shadow.Enabled then
-        customIcon.Charges:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
-        customIcon.Charges:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
-    else
-        customIcon.Charges:SetShadowColor(0, 0, 0, 0)
-        customIcon.Charges:SetShadowOffset(0, 0)
-    end
-
     customIcon.Cooldown = CreateFrame("Cooldown", nil, customIcon, "CooldownFrameTemplate")
     customIcon.Cooldown:SetAllPoints(customIcon)
     customIcon.Cooldown:SetDrawEdge(false)
@@ -106,18 +91,9 @@ local function CreateCustomIcon(itemId)
 
     customIcon:HookScript("OnEvent", function(self, event, ...)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
-            local itemCount, startTime, durationTime = FetchItemData(itemId)
-            if itemCount then
-                customIcon.Charges:SetText(tostring(itemCount))
+            local startTime, durationTime = FetchItemData(itemId)
+            if startTime then
                 customIcon.Cooldown:SetCooldown(startTime, durationTime)
-                if itemCount <= 0 then
-                    customIcon.Icon:SetDesaturated(true)
-                    customIcon.Charges:SetText("")
-                else
-                    customIcon.Icon:SetDesaturated(false)
-                    customIcon.Charges:SetText(tostring(itemCount))
-                end
-                customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)
             end
         end
     end)
