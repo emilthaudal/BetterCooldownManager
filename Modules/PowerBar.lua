@@ -61,7 +61,7 @@ local function UpdatePowerValues()
     local powerCurrent = UnitPower("player")
     local powerType = UnitPowerType("player")
     local PowerBar = BCDM.PowerBar
-    if PowerBar and PowerBar.Status then
+    if PowerBar and PowerBar.Status and powerType then
         if powerType == 0 then
             PowerBar.Text:SetText(string.format("%.0f%%", UnitPowerPercent("player", 0, false, CurveConstants.ScaleTo100)))
         else
