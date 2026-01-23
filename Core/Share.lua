@@ -1,6 +1,7 @@
 local _, BCDM = ...
 local Serialize = LibStub:GetLibrary("AceSerializer-3.0")
 local Compress = LibStub:GetLibrary("LibDeflate")
+local LEMO = LibStub("LibEditModeOverride-1.0")
 
 function BCDM:ExportSavedVariables()
     local profileData = { profile = BCDM.db.profile, }
@@ -26,7 +27,9 @@ function BCDM:ImportSavedVariables(encodedInfo, profileName)
             BCDM.db.profile[key] = value
         end
         BCDMG.RefreshProfiles()
+        LEMO:LoadLayouts()
         BCDM:UpdateBCDM()
+        LEMO:ApplyChanges()
         return
     end
     StaticPopupDialogs["BCDM_IMPORT_NEW_PROFILE"] = {
@@ -50,7 +53,9 @@ function BCDM:ImportSavedVariables(encodedInfo, profileName)
                 BCDM.db.profile[key] = value
             end
             BCDMG.RefreshProfiles()
+            LEMO:LoadLayouts()
             BCDM:UpdateBCDM()
+            LEMO:ApplyChanges()
         end,
     }
 
@@ -80,6 +85,8 @@ function BCDMG:ImportBCDM(importString, profileKey)
     if type(profileData.profile) == "table" then
         BCDM.db.profiles[profileKey] = profileData.profile
         BCDM.db:SetProfile(profileKey)
+        LEMO:LoadLayouts()
         BCDM:UpdateBCDM()
+        LEMO:ApplyChanges()
     end
 end
