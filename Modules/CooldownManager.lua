@@ -320,11 +320,17 @@ function BCDM:SkinCooldownManager()
     StyleIcons()
     StyleChargeCount()
     Position()
-    -- C_Timer.After(1, function() StyleBuffsBars() end)
     SetHooks()
     SetupCenterBuffs()
-    for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do C_Timer.After(0.1, function() ApplyCooldownText(viewerName) end) end
-    C_Timer.After(1, function() LEMO:ApplyChanges() end)
+    for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do
+        C_Timer.After(0.1, function() ApplyCooldownText(viewerName) end)
+    end
+
+    C_Timer.After(1, function()
+        if not InCombatLockdown() then
+            LEMO:ApplyChanges()
+        end
+    end)
 end
 
 function BCDM:UpdateCooldownViewer(viewerType)
